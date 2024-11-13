@@ -20,8 +20,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	budget, err := client.NewBudgetClient("localhost:50051")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	reportSRV := service.NewReportService(tx, user)
+	reportSRV := service.NewReportService(tx, user, budget)
 	lis, err := net.Listen("tcp", ":50054")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

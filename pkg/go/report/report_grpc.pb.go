@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ReportService_GetSummaryReport_FullMethodName = "/report.ReportService/GetSummaryReport"
+	ReportService_GetBudgetReport_FullMethodName  = "/report.ReportService/GetBudgetReport"
 )
 
 // ReportServiceClient is the client API for ReportService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReportServiceClient interface {
 	GetSummaryReport(ctx context.Context, in *GetSummaryReportRequest, opts ...grpc.CallOption) (*GetSummaryReportResponse, error)
+	GetBudgetReport(ctx context.Context, in *GetBudgetReportRequest, opts ...grpc.CallOption) (*GetBudgetReportResponse, error)
 }
 
 type reportServiceClient struct {
@@ -46,11 +48,21 @@ func (c *reportServiceClient) GetSummaryReport(ctx context.Context, in *GetSumma
 	return out, nil
 }
 
+func (c *reportServiceClient) GetBudgetReport(ctx context.Context, in *GetBudgetReportRequest, opts ...grpc.CallOption) (*GetBudgetReportResponse, error) {
+	out := new(GetBudgetReportResponse)
+	err := c.cc.Invoke(ctx, ReportService_GetBudgetReport_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReportServiceServer is the server API for ReportService service.
 // All implementations should embed UnimplementedReportServiceServer
 // for forward compatibility
 type ReportServiceServer interface {
 	GetSummaryReport(context.Context, *GetSummaryReportRequest) (*GetSummaryReportResponse, error)
+	GetBudgetReport(context.Context, *GetBudgetReportRequest) (*GetBudgetReportResponse, error)
 }
 
 // UnimplementedReportServiceServer should be embedded to have forward compatible implementations.
@@ -59,6 +71,9 @@ type UnimplementedReportServiceServer struct {
 
 func (UnimplementedReportServiceServer) GetSummaryReport(context.Context, *GetSummaryReportRequest) (*GetSummaryReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSummaryReport not implemented")
+}
+func (UnimplementedReportServiceServer) GetBudgetReport(context.Context, *GetBudgetReportRequest) (*GetBudgetReportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBudgetReport not implemented")
 }
 
 // UnsafeReportServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -90,6 +105,24 @@ func _ReportService_GetSummaryReport_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReportService_GetBudgetReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBudgetReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).GetBudgetReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportService_GetBudgetReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).GetBudgetReport(ctx, req.(*GetBudgetReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReportService_ServiceDesc is the grpc.ServiceDesc for ReportService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +133,10 @@ var ReportService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSummaryReport",
 			Handler:    _ReportService_GetSummaryReport_Handler,
+		},
+		{
+			MethodName: "GetBudgetReport",
+			Handler:    _ReportService_GetBudgetReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

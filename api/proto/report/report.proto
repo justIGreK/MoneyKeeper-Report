@@ -5,12 +5,15 @@ package report;
 
 option go_package = "proto;report";
 
+import "google/protobuf/wrappers.proto";
+
 service ReportService {
   rpc GetSummaryReport(GetSummaryReportRequest) returns (GetSummaryReportResponse);
+  rpc GetBudgetReport(GetBudgetReportRequest) returns (GetBudgetReportResponse);
 }
 
 message GetSummaryReportRequest {
-  string user_id = 1;
+  string userId = 1;
   string period = 2;
 }
 
@@ -18,17 +21,41 @@ message GetSummaryReportResponse {
   ReportResponse report = 1;
 }
 
+message GetBudgetReportRequest {
+  string userId = 1;
+  string budgetId = 2;
+}
 
+message GetBudgetReportResponse {
+  BudgetReport report = 1;
+}
 message ReportResponse {
-    string user_id = 1;
-    string period = 2;
-    float total_spent = 3;
-    int32 transaction_count = 4;
-    repeated CategoryReport categories = 5;
+  string period = 1;
+  float totalSpent = 2;
+  int32 transactionCount = 3;
+  repeated CategoryReport categories = 4;
 }
 
 message CategoryReport {
-    string name = 1;
-    float total = 2;
-    int32 count = 3;
+  string name = 1;
+  float total = 2;
+  int32 count = 3;
+}
+
+message RequiredCategoryReport {
+  string name = 1;
+  float total = 2;
+  float limit = 3;
+  int32 count = 4;
+}
+
+message BudgetReport {
+  string budgetName = 1;
+  string period = 2;
+  float leftDays = 3;
+  float limit = 4;
+  float totalSpent = 5;
+  int32 transactionCount = 6;
+  repeated RequiredCategoryReport reqCategories = 7;
+  repeated CategoryReport categories = 8;
 }

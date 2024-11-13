@@ -2,6 +2,8 @@ github.com/golang/protobuf v1.5.4 h1:i7eJL8qZTpSEXOPTxNKhASYpMn+8e5Q6AdndVa1dWek
 github.com/golang/protobuf v1.5.4/go.mod h1:lnTiLA8Wa4RWRcIUkrtSVa5nRhsEGBg48fD6rSs7xps=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/justIGreK/MoneyKeeper-Budget v0.0.0-20241112193306-8fe19baf24d6 h1:nn97t9ZxzT4OC/lALYBpLviOxYPBwDaMcA6LXNdrals=
+github.com/justIGreK/MoneyKeeper-Budget v0.0.0-20241112193306-8fe19baf24d6/go.mod h1:JOY7Npffabd3VmaKlAJinPUitXs8gyiJ7moAtKkhT1A=
 github.com/justIGreK/MoneyKeeper-Transaction v0.0.0-20241111134054-834f3f13659d h1:0o5no11ILEOEw0+glAihcVVpZN1/WD8rv2JW3/yFKLU=
 github.com/justIGreK/MoneyKeeper-Transaction v0.0.0-20241111134054-834f3f13659d/go.mod h1:15os5XP+9oYzVY7xpP4TtlyIvXFWtCL18vJVFyfHDQ8=
 github.com/justIGreK/MoneyKeeper-User v0.0.0-20241111132838-03c128937981 h1:Uu4/yC7dZyUwLSGve1/q6PoLBoejDp/YG1s6NZXol7w=

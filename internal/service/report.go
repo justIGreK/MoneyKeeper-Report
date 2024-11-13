@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+
 	"github.com/justIGreK/MoneyKeeper-Report/internal/models"
 )
 
@@ -18,17 +19,22 @@ type UserService interface {
 	GetUser(ctx context.Context, id string) (string, string, error)
 }
 
+type BudgetSevice interface {
+	GetBudget(ctx context.Context, userID, budgetID string) (*models.Budget, error)
+}
+
 type ReportService struct {
 	Transaction TransactionService
 	User        UserService
+	Budget      BudgetSevice
 }
 
-func NewReportService(tx TransactionService, user UserService) *ReportService {
-	return &ReportService{Transaction: tx, User: user}
+func NewReportService(tx TransactionService, user UserService, budget BudgetSevice) *ReportService {
+	return &ReportService{Transaction: tx, User: user, Budget: budget}
 }
 
-const(
-	Dateformat string = "2006-01-02"
+const (
+	Dateformat     string = "2006-01-02"
 	DateTimeformat string = "2006-01-02T15:04:05"
 )
 
@@ -52,7 +58,6 @@ func (s *ReportService) GetPeriodSummary(ctx context.Context, userID, period str
 	}
 
 	report := models.ReportResponse{
-		UserID:     userID,
 		Period:     fmt.Sprintf("%s - %s", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")),
 		Categories: []models.CategoryReport{},
 	}
@@ -103,63 +108,85 @@ func (s *ReportService) getPeriodDates(period string) (time.Time, time.Time) {
 	}
 }
 
-// func (s *ReportService) GetBudgetReport(ctx context.Context, userID, budgetID string) (*models.BudgetReport, error) {
-// 	budget, err := s.BudgetRepo.GetBudget(ctx, userID, budgetID)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return nil, err
-// 	}
-// 	if budget == nil {
-// 		return nil, errors.New("budget is not found")
-// 	}
-// 	now := time.Now()
-// 	if now.Before(budget.EndDate) {
-// 		return nil, errors.New("budget is not over yet")
-// 	}
-// 	txs, err := s.Transaction.GetTXByTimeFrame(ctx, userID, models.TimeFrame{budget.StartDate, budget.EndDate})
-// 	if err != nil {
-// 		log.Println(err)
-// 		return nil, err
-// 	}
+func (s *ReportService) GetBudgetReport(ctx context.Context, userID, budgetID string) (*models.BudgetReport, error) {
+	id, _, err := s.User.GetUser(ctx, userID)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if id == "" {
+		return nil, errors.New("user not found")
+	}
+	budget, err := s.Budget.GetBudget(ctx, userID, budgetID)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if budget == nil {
+		return nil, errors.New("budget is not found")
+	}
+	daysLeft := 0.0
+	now := time.Now()
+	endDate, err := time.Parse(Dateformat, budget.EndDate)
+	if err != nil{
+		log.Println("invalid endtime")
+		return nil, err
+	}
+	if !endDate.Before(now){
+		duration := endDate.Sub(now)
+		daysLeft = duration.Hours()/24.0
+	}
+	txs, err := s.Transaction.GetTXByTimeFrame(ctx, userID, budget.StartDate, budget.EndDate)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
-// 	var totalSpent float64
-// 	var failedDays, successfulDays int
-// 	dailyExpenses := make(map[string]float64)
-// 	itemCounts := make(map[string]int)
-// 	var mostExpensive models.Transaction
-// 	var mostFrequent string
+	report := models.BudgetReport{
+		BudgetName: budget.Name,
+		Period:     fmt.Sprintf("%s - %s", budget.StartDate, budget.EndDate),
+		Limit: float32(budget.Limit),
+		LeftDays: float32(daysLeft),
+		RequiredCategories: []models.RequiredCategoryReport{},
+		Categories: []models.CategoryReport{},
+	}
+	categoryTotals := make(map[string]float32)
+	categoryCounts := make(map[string]int)
+	transactionCount := 0
+	totalSpent := float32(0.0)
+	requiredCategories := make(map[string]float32)
+	for _, categories := range budget.Category{
+		requiredCategories[categories.Name] = float32(categories.Limit)
+	}
+	for _, txn := range txs {
+		totalSpent += txn.Cost
+		transactionCount++
 
-// 	for _, tx := range txs {
-// 		totalSpent += tx.Cost
+		if txn.Category != "" {
+			categoryTotals[txn.Category] += txn.Cost
+			categoryCounts[txn.Category]++
+		}
+	}
 
-// 		day := tx.Date.Format("2006-01-02")
-// 		dailyExpenses[day] += tx.Cost
+	report.TotalSpent = totalSpent
+	report.TransactionCount = transactionCount
 
-// 		if tx.Cost > mostExpensive.Cost {
-// 			mostExpensive = tx
-// 		}
-
-// 		itemCounts[tx.Name]++
-// 		if itemCounts[tx.Name] > itemCounts[mostFrequent] {
-// 			mostFrequent = tx.Name
-// 		}
-// 	}
-// 	for _, dailyTotal := range dailyExpenses {
-// 		if dailyTotal > budget.DailyAmount {
-// 			failedDays++
-// 		} else {
-// 			successfulDays++
-// 		}
-// 	}
-
-// 	budgetExceeded := totalSpent > budget.Amount
-// 	report := models.BudgetReport{
-// 		TotalSpent:     totalSpent,
-// 		BudgetExceeded: budgetExceeded,
-// 		FailedDays:     failedDays,
-// 		SuccessfulDays: successfulDays,
-// 		MostExpensive:  mostExpensive,
-// 		MostFrequent:   mostFrequent,
-// 	}
-// 	return &report, nil
-// }
+	for category, total := range categoryTotals {
+		if limit, exists := requiredCategories[category]; exists {
+			report.RequiredCategories = append(report.RequiredCategories, models.RequiredCategoryReport{
+				Name: category,
+				Total: total,
+				Limit: limit,
+				Count: categoryCounts[category],
+			})
+		}else {
+			report.Categories = append(report.Categories, models.CategoryReport{
+				Name:  category,
+				Total: total,
+				Count: categoryCounts[category],
+			})
+		}
+	}
+	report.TransactionCount = transactionCount
+	return &report, nil
+}

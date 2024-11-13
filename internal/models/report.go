@@ -1,15 +1,30 @@
-package models 
+package models
 
 type ReportResponse struct {
-    UserID          string      `json:"user_id"`
-    Period          string      `json:"period"`
-    TotalSpent      float32     `json:"total_spent"`
-    TransactionCount int        `json:"transaction_count"`
-    Categories      []CategoryReport `json:"categories"`
+	Period           string
+	TotalSpent       float32
+	TransactionCount int
+	Categories       []CategoryReport
 }
 
 type CategoryReport struct {
-    Name  string  `json:"name"`
-    Total float32 `json:"total"`
-	Count int    `json:"transaction_count"`
+	Name  string
+	Total float32
+	Count int
+}
+type RequiredCategoryReport struct {
+	Name  string
+	Total float32
+    Limit float32
+	Count int
+}
+type BudgetReport struct {
+	BudgetName string
+	Period     string
+	LeftDays   float32
+	Limit      float32
+	TotalSpent float32
+	TransactionCount int
+    RequiredCategories []RequiredCategoryReport
+	Categories       []CategoryReport
 }

@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/justIGreK/MoneyKeeper-Budget v0.0.0-20241112193306-8fe19baf24d6
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
