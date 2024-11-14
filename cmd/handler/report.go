@@ -13,13 +13,22 @@ type ReportServiceServer struct {
 }
 
 type ReportService interface {
-	GetPeriodSummary(ctx context.Context, userID, period string) (*models.ReportResponse, error)
+	GetPeriodSummary(ctx context.Context, period models.GetPeriodSummary) (*models.ReportResponse, error)
 	GetBudgetReport(ctx context.Context, userID, budgetID string) (*models.BudgetReport, error)
 }
 
 func (s *ReportServiceServer) GetSummaryReport(ctx context.Context, req *reportProto.GetSummaryReportRequest) (*reportProto.GetSummaryReportResponse, error) {
-
-	report, err := s.ReportSRV.GetPeriodSummary(ctx, req.UserId, req.Period)
+	period := models.GetPeriodSummary{UserID: req.UserId}
+	if req.Start != "" {
+		period.Start = &req.Start
+	} 
+	if req.End != "" {
+		period.End = &req.End
+	} 
+	if req.Period != "" {
+		period.Period = &req.Period
+	} 
+	report, err := s.ReportSRV.GetPeriodSummary(ctx, period)
 	if err != nil {
 		return nil, err
 	}

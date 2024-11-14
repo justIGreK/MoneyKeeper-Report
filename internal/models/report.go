@@ -28,3 +28,10 @@ type BudgetReport struct {
     RequiredCategories []RequiredCategoryReport
 	Categories       []CategoryReport
 }
+
+type GetPeriodSummary struct{
+	UserID string
+	Period *string
+	Start *string
+	End *string
+}

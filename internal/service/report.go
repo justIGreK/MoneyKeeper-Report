@@ -38,8 +38,8 @@ const (
 	DateTimeformat string = "2006-01-02T15:04:05"
 )
 
-func (s *ReportService) GetPeriodSummary(ctx context.Context, userID, period string) (*models.ReportResponse, error) {
-	id, _, err := s.User.GetUser(ctx, userID)
+func (s *ReportService) GetPeriodSummary(ctx context.Context, periodSum models.GetPeriodSummary) (*models.ReportResponse, error) {
+	id, _, err := s.User.GetUser(ctx, periodSum.UserID)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -47,11 +47,13 @@ func (s *ReportService) GetPeriodSummary(ctx context.Context, userID, period str
 	if id == "" {
 		return nil, errors.New("user not found")
 	}
-	startDate, endDate := s.getPeriodDates(period)
-	if startDate.IsZero() {
-		return nil, errors.New("invalid period")
+	
+	startDate, endDate, err := s.getDatesByPeriod(periodSum)
+	if err != nil{
+		log.Println(err)
+		return nil, err
 	}
-	txs, err := s.Transaction.GetTXByTimeFrame(ctx, userID, startDate.Format(Dateformat), endDate.Format(Dateformat))
+	txs, err := s.Transaction.GetTXByTimeFrame(ctx, periodSum.UserID, startDate.Format(Dateformat), endDate.Format(Dateformat))
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -91,6 +93,29 @@ func (s *ReportService) GetPeriodSummary(ctx context.Context, userID, period str
 	return &report, nil
 }
 
+func (s *ReportService) getDatesByPeriod(period models.GetPeriodSummary)(time.Time, time.Time, error){
+	end := time.Now().AddDate(10000, 0, 0)
+	start := time.Unix(0, 0)
+	var err error
+	if period.Period != nil{
+		start, end = s.getPeriodDates(*period.Period)
+		return start, end, nil
+	}else{
+		if period.Start != nil{
+			start, err = time.Parse(*period.Start, Dateformat)
+			if err != nil{
+				return time.Time{}, time.Time{}, err
+			}
+		} 
+		if period.End != nil{
+			end, err = time.Parse(*period.End, Dateformat)
+			if err != nil{
+				return time.Time{}, time.Time{}, err
+			}
+		}
+	}
+	return start, end, nil	
+}
 func (s *ReportService) getPeriodDates(period string) (time.Time, time.Time) {
 	now := time.Now().UTC()
 	switch period {
@@ -135,6 +160,9 @@ func (s *ReportService) GetBudgetReport(ctx context.Context, userID, budgetID st
 	if !endDate.Before(now){
 		duration := endDate.Sub(now)
 		daysLeft = duration.Hours()/24.0
+	}
+	if daysLeft < 0{
+		daysLeft = 0
 	}
 	txs, err := s.Transaction.GetTXByTimeFrame(ctx, userID, budget.StartDate, budget.EndDate)
 	if err != nil {
