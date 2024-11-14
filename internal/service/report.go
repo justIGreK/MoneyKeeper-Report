@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/justIGreK/MoneyKeeper-Report/internal/models"
@@ -47,9 +48,9 @@ func (s *ReportService) GetPeriodSummary(ctx context.Context, periodSum models.G
 	if id == "" {
 		return nil, errors.New("user not found")
 	}
-	
+
 	startDate, endDate, err := s.getDatesByPeriod(periodSum)
-	if err != nil{
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (s *ReportService) GetPeriodSummary(ctx context.Context, periodSum models.G
 	}
 
 	report := models.ReportResponse{
-		Period:     fmt.Sprintf("%s - %s", startDate.Format("2006-01-02"), endDate.Format("2006-01-02")),
+		Period:     fmt.Sprintf("%s - %s", startDate.Format(Dateformat), endDate.Format(Dateformat)),
 		Categories: []models.CategoryReport{},
 	}
 
@@ -93,28 +94,30 @@ func (s *ReportService) GetPeriodSummary(ctx context.Context, periodSum models.G
 	return &report, nil
 }
 
-func (s *ReportService) getDatesByPeriod(period models.GetPeriodSummary)(time.Time, time.Time, error){
+func (s *ReportService) getDatesByPeriod(period models.GetPeriodSummary) (time.Time, time.Time, error) {
 	end := time.Now().AddDate(10000, 0, 0)
 	start := time.Unix(0, 0)
 	var err error
-	if period.Period != nil{
+	if period.Period != nil {
 		start, end = s.getPeriodDates(*period.Period)
 		return start, end, nil
-	}else{
-		if period.Start != nil{
-			start, err = time.Parse(*period.Start, Dateformat)
-			if err != nil{
+	} else {
+		if period.Start != nil {
+			startstr := strings.TrimSpace(*period.Start)
+			start, err = time.Parse(startstr, Dateformat)
+			log.Println(err)
+			if err != nil {
 				return time.Time{}, time.Time{}, err
 			}
-		} 
-		if period.End != nil{
+		}
+		if period.End != nil {
 			end, err = time.Parse(*period.End, Dateformat)
-			if err != nil{
+			if err != nil {
 				return time.Time{}, time.Time{}, err
 			}
 		}
 	}
-	return start, end, nil	
+	return start, end, nil
 }
 func (s *ReportService) getPeriodDates(period string) (time.Time, time.Time) {
 	now := time.Now().UTC()
@@ -153,15 +156,15 @@ func (s *ReportService) GetBudgetReport(ctx context.Context, userID, budgetID st
 	daysLeft := 0.0
 	now := time.Now()
 	endDate, err := time.Parse(Dateformat, budget.EndDate)
-	if err != nil{
+	if err != nil {
 		log.Println("invalid endtime")
 		return nil, err
 	}
-	if !endDate.Before(now){
+	if !endDate.Before(now) {
 		duration := endDate.Sub(now)
-		daysLeft = duration.Hours()/24.0
+		daysLeft = duration.Hours() / 24.0
 	}
-	if daysLeft < 0{
+	if daysLeft < 0 {
 		daysLeft = 0
 	}
 	txs, err := s.Transaction.GetTXByTimeFrame(ctx, userID, budget.StartDate, budget.EndDate)
@@ -171,19 +174,19 @@ func (s *ReportService) GetBudgetReport(ctx context.Context, userID, budgetID st
 	}
 
 	report := models.BudgetReport{
-		BudgetName: budget.Name,
-		Period:     fmt.Sprintf("%s - %s", budget.StartDate, budget.EndDate),
-		Limit: float32(budget.Limit),
-		LeftDays: float32(daysLeft),
+		BudgetName:         budget.Name,
+		Period:             fmt.Sprintf("%s - %s", budget.StartDate, budget.EndDate),
+		Limit:              float32(budget.Limit),
+		LeftDays:           float32(daysLeft),
 		RequiredCategories: []models.RequiredCategoryReport{},
-		Categories: []models.CategoryReport{},
+		Categories:         []models.CategoryReport{},
 	}
 	categoryTotals := make(map[string]float32)
 	categoryCounts := make(map[string]int)
 	transactionCount := 0
 	totalSpent := float32(0.0)
 	requiredCategories := make(map[string]float32)
-	for _, categories := range budget.Category{
+	for _, categories := range budget.Category {
 		requiredCategories[categories.Name] = float32(categories.Limit)
 	}
 	for _, txn := range txs {
@@ -195,19 +198,18 @@ func (s *ReportService) GetBudgetReport(ctx context.Context, userID, budgetID st
 			categoryCounts[txn.Category]++
 		}
 	}
-
 	report.TotalSpent = totalSpent
 	report.TransactionCount = transactionCount
 
 	for category, total := range categoryTotals {
 		if limit, exists := requiredCategories[category]; exists {
 			report.RequiredCategories = append(report.RequiredCategories, models.RequiredCategoryReport{
-				Name: category,
+				Name:  category,
 				Total: total,
 				Limit: limit,
 				Count: categoryCounts[category],
 			})
-		}else {
+		} else {
 			report.Categories = append(report.Categories, models.CategoryReport{
 				Name:  category,
 				Total: total,

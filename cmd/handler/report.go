@@ -65,7 +65,7 @@ func (s *ReportServiceServer) GetBudgetReport(ctx context.Context, req *reportPr
 }
 
 func convertToProtoBudgetReport(report *models.BudgetReport) *reportProto.BudgetReport {
-	reqCategories := make([]*reportProto.RequiredCategoryReport, len(report.Categories)) 
+	reqCategories := make([]*reportProto.RequiredCategoryReport, len(report.RequiredCategories)) 
 	categories := make([]*reportProto.CategoryReport, len(report.Categories))
 	for i, b := range report.Categories {
 		categories[i] = &reportProto.CategoryReport{
